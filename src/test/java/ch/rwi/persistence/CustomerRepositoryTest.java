@@ -25,6 +25,9 @@ public class CustomerRepositoryTest {
     @Autowired
     private CustomerRepository repository;
 
+    /**
+     * Straightforward persisting of one entity.
+     */
     @Test
     public void persistOneCustomer() {
         this.em.persist(new Customer("Michael", "Miller"));
@@ -35,9 +38,30 @@ public class CustomerRepositoryTest {
         assertThat(customer.getSurName()).isEqualTo("Miller");
     }
 
+    /**
+     *  If the id in an entity is set (either manually or by the sequence generation strategy ), then hibernate has to perform an additional
+     *  select-statement when calling merge. Only this way, hibernate can decide if it is a new entity or an already existing one. Depending on that,
+     *  hibernate performs an insert- or an update-statement.
+     */
+    @Test
+    public void mergeOneCustomer() {
+        Customer customer = new Customer("Michael", "Miller");
+        customer.setId(1L);
+        this.em.merge(customer);
+
+        Customer actual = this.repository.findByFirstName("Michael");
+
+        assertThat(actual.getFirstName()).isEqualTo("Michael");
+        assertThat(actual.getSurName()).isEqualTo("Miller");
+    }
+
+    /**
+     * Batch-inserts are memory-critical as the persistence context (1st level cache) will hold all these entities in merory as long as flush is not
+     * called. Calling flush and clear after some inserts will alleviate this issue.
+     */
     @Test
     public void persistManyCustomersInBatch() {
-        for (int i = 0; i < 10000; i++) {
+        for (int i = 0; i < 1000; i++) {
             Customer customer = new Customer("Firstname" + i, "Surname" + i);
             this.em.persist(customer);
             if ( i % 20 == 0 ) { //20, same as the JDBC batch size
@@ -48,7 +72,7 @@ public class CustomerRepositoryTest {
         }
         List<Customer> customers = this.repository.findAll();
 
-        assertThat(customers).hasSize(10000);
+        assertThat(customers).hasSize(1000);
     }
 
 }

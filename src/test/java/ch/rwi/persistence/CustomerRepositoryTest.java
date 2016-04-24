@@ -38,9 +38,7 @@ public class CustomerRepositoryTest {
     @Test
     public void persistManyCustomersInBatch() {
         for (int i = 0; i < 10000; i++) {
-            Customer customer = new Customer();
-            customer.setFirstName("Firstname" + i);
-            customer.setSurName("Surname" + i);
+            Customer customer = new Customer("Firstname" + i, "Surname" + i);
             this.em.persist(customer);
             if ( i % 20 == 0 ) { //20, same as the JDBC batch size
                 //flush a batch of inserts and release memory:

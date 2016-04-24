@@ -1,5 +1,6 @@
 package ch.rwi.domain;
 
+import com.sun.istack.internal.NotNull;
 import org.apache.commons.lang.builder.ToStringBuilder;
 import org.apache.commons.lang.builder.ToStringStyle;
 
@@ -18,8 +19,10 @@ public class Customer {
     @SequenceGenerator(name = "CustomerSeq", sequenceName = "CUSTOMER_SEQ")
     private Long id;
 
+    @NotNull
     private String firstName;
 
+    @NotNull
     private String surName;
 
     public Customer(){

@@ -1,11 +1,7 @@
-/*
- * Copyright (C) Schweizerische Bundesbahnen SBB, 2016.
- */
-
 package ch.rwi.persistence;
 
 
-import javax.sql.DataSource;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -15,8 +11,6 @@ import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import ch.rwi.domain.Customer;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 
 @RunWith(SpringRunner.class)

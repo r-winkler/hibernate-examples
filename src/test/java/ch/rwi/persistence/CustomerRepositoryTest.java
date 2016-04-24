@@ -12,6 +12,8 @@ import org.springframework.test.context.junit4.SpringRunner;
 
 import ch.rwi.domain.Customer;
 
+import java.util.List;
+
 
 @RunWith(SpringRunner.class)
 @DataJpaTest
@@ -24,13 +26,31 @@ public class CustomerRepositoryTest {
     private CustomerRepository repository;
 
     @Test
-    public void shouldPersistCustomer() {
-        em.persist(new Customer("Michael", "Miller"));
+    public void persistOneCustomer() {
+        this.em.persist(new Customer("Michael", "Miller"));
 
         Customer customer = this.repository.findByFirstName("Michael");
 
         assertThat(customer.getFirstName()).isEqualTo("Michael");
         assertThat(customer.getSurName()).isEqualTo("Miller");
+    }
+
+    @Test
+    public void persistManyCustomersInBatch() {
+        for (int i = 0; i < 10000; i++) {
+            Customer customer = new Customer();
+            customer.setFirstName("Firstname" + i);
+            customer.setSurName("Surname" + i);
+            this.em.persist(customer);
+            if ( i % 20 == 0 ) { //20, same as the JDBC batch size
+                //flush a batch of inserts and release memory:
+                this.em.flush();
+                this.em.clear();
+            }
+        }
+        List<Customer> customers = this.repository.findAll();
+
+        assertThat(customers).hasSize(10000);
     }
 
 }

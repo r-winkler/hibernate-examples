@@ -3,6 +3,9 @@ package ch.rwi.persistence;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import ch.rwi.domain.Product;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,6 +15,13 @@ import org.springframework.test.context.junit4.SpringRunner;
 
 import ch.rwi.domain.Customer;
 
+import javax.sql.DataSource;
+import javax.swing.*;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
 
 
@@ -24,6 +34,21 @@ public class CustomerRepositoryTest {
 
     @Autowired
     private CustomerRepository repository;
+
+    @Autowired
+    DataSource dataSource;
+
+    private long start;
+
+    @Before
+    public void startTime(){
+        start = System.currentTimeMillis();
+    }
+
+    @After
+    public void stopTime() throws SQLException {
+        System.out.println("Time = " + (System.currentTimeMillis()-start));
+    }
 
     /**
      * Straightforward persisting of one entity.
@@ -60,8 +85,8 @@ public class CustomerRepositoryTest {
      * called. Calling flush and clear after some inserts will alleviate this issue.
      */
     @Test
-    public void persistManyCustomersInBatch() {
-        for (int i = 0; i < 1000; i++) {
+    public void batchInsertWithHibernate() {
+        for (int i = 0; i < 1000000; i++) {
             Customer customer = new Customer("Firstname" + i, "Surname" + i);
             this.em.persist(customer);
             if ( i % 20 == 0 ) { //20, same as the JDBC batch size
@@ -72,7 +97,86 @@ public class CustomerRepositoryTest {
         }
         List<Customer> customers = this.repository.findAll();
 
-        assertThat(customers).hasSize(1000);
+        assertThat(customers).hasSize(1000000);
     }
 
+    @Test
+    public void batchInsertWithJdbc() throws SQLException {
+        String DB_CONNECTION = "jdbc:h2:mem:testdb";
+        String DB_USER = "sa";
+        String DB_PASSWORD = "";
+        String insertCustomerSQL = "INSERT INTO CUSTOMER"
+                + "(ID, FIRST_NAME, SUR_NAME) VALUES"
+                + "(CUSTOMER_SEQ.NEXTVAL,?,?)";
+        try(Connection conn = DriverManager.getConnection(DB_CONNECTION, DB_USER, DB_PASSWORD);
+            PreparedStatement preparedStatement = conn.prepareStatement(insertCustomerSQL)){
+            for (int i = 0; i < 1000000; i++) {
+                preparedStatement.setString(1, "Firstname" + i);
+                preparedStatement.setString(2, "Surname" + i);
+                preparedStatement.executeUpdate();
+            }
+        }
+
+        List<Customer> customers = this.repository.findAll();
+        assertThat(customers).hasSize(1000000);
+
+    }
+
+    @Test
+    public void batchInsertWithHibernateWithParentAndChild() {
+        for (int i = 0; i < 1000; i++) {
+            Customer customer = new Customer("Firstname" + i, "Surname" + i);
+            List<Product> products = new ArrayList<>();
+            for (int j = 0; j < 500; j++) {
+                Product product = new Product("Product" + j);
+                products.add(product);
+            }
+            customer.setProducts(products);
+            this.em.persist(customer);
+            if ( i % 20 == 0 ) { //20, same as the JDBC batch size
+                //flush a batch of inserts and release memory:
+                this.em.flush();
+                this.em.clear();
+            }
+        }
+
+        List<Customer> customers = this.repository.findAll();
+        assertThat(customers).hasSize(1000);
+        for(Customer customer : customers){
+            assertThat(customer.getProducts()).hasSize(500);
+        }
+    }
+
+    @Test
+    public void batchInsertWithJdbcWithParentAndChild() throws SQLException {
+        String DB_CONNECTION = "jdbc:h2:mem:testdb";
+        String DB_USER = "sa";
+        String DB_PASSWORD = "";
+        String insertCustomerSQL = "INSERT INTO CUSTOMER"
+                + "(ID, FIRST_NAME, SUR_NAME) VALUES"
+                + "(CUSTOMER_SEQ.NEXTVAL,?,?)";
+        String insertProductSQL = "INSERT INTO PRODUCT"
+                + "(ID, CUSTOMER_ID, NAME) VALUES"
+                + "(PRODUCT_SEQ.NEXTVAL,CUSTOMER_SEQ.CURRVAL,?)";
+        try(Connection conn = DriverManager.getConnection(DB_CONNECTION, DB_USER, DB_PASSWORD);
+            PreparedStatement pstCustomer = conn.prepareStatement(insertCustomerSQL);
+            PreparedStatement pstProduct = conn.prepareStatement(insertProductSQL)){
+            for (int i = 0; i < 1000; i++) {
+                pstCustomer.setString(1, "Firstname" + i);
+                pstCustomer.setString(2, "Surname" + i);
+                pstCustomer.executeUpdate();
+                for (int j = 0; j < 500; j++) {
+                    pstProduct.setString(1, "Name" + j);
+                    pstProduct.executeUpdate();
+                }
+            }
+        }
+
+        List<Customer> customers = this.repository.findAll();
+        assertThat(customers).hasSize(1000);
+        for(Customer customer : customers){
+            assertThat(customer.getProducts()).hasSize(500);
+        }
+
+    }
 }

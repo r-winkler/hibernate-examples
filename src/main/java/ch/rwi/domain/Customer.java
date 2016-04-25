@@ -1,15 +1,21 @@
 package ch.rwi.domain;
 
-import com.sun.istack.internal.NotNull;
-import org.apache.commons.lang.builder.ToStringBuilder;
-import org.apache.commons.lang.builder.ToStringStyle;
+import java.util.List;
+import java.util.Objects;
 
+import javax.persistence.CascadeType;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.OneToMany;
 import javax.persistence.SequenceGenerator;
-import java.util.Objects;
+
+import org.apache.commons.lang.builder.ToStringBuilder;
+import org.apache.commons.lang.builder.ToStringStyle;
+
+import com.sun.istack.internal.NotNull;
 
 @Entity
 public class Customer {
@@ -24,6 +30,10 @@ public class Customer {
 
     @NotNull
     private String surName;
+
+    @OneToMany(cascade = CascadeType.ALL)
+    @JoinColumn(name = "customer_id")
+    List<Product> products;
 
     public Customer(){
 
@@ -56,6 +66,14 @@ public class Customer {
 
     public void setSurName(String surName) {
         this.surName = surName;
+    }
+
+    public List<Product> getProducts() {
+        return products;
+    }
+
+    public void setProducts(List<Product> products) {
+        this.products = products;
     }
 
     @Override

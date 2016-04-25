@@ -33,9 +33,6 @@ public class CustomerRepositoryTest {
     @Autowired
     private CustomerRepository repository;
 
-    @Autowired
-    DataSource dataSource;
-
     private long start;
 
     @Before

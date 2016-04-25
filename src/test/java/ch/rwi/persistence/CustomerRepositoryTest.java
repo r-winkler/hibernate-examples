@@ -1,6 +1,5 @@
 package ch.rwi.persistence;
 
-
 import static org.assertj.core.api.Assertions.assertThat;
 
 import ch.rwi.domain.Product;
@@ -16,7 +15,6 @@ import org.springframework.test.context.junit4.SpringRunner;
 import ch.rwi.domain.Customer;
 
 import javax.sql.DataSource;
-import javax.swing.*;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -41,13 +39,13 @@ public class CustomerRepositoryTest {
     private long start;
 
     @Before
-    public void startTime(){
+    public void startTime() {
         start = System.currentTimeMillis();
     }
 
     @After
     public void stopTime() throws SQLException {
-        System.out.println("Time = " + (System.currentTimeMillis()-start));
+        System.out.println("Time = " + (System.currentTimeMillis() - start));
     }
 
     /**
@@ -64,9 +62,9 @@ public class CustomerRepositoryTest {
     }
 
     /**
-     *  If the id in an entity is set (either manually or by the sequence generation strategy ), then hibernate has to perform an additional
-     *  select-statement when calling merge. Only this way, hibernate can decide if it is a new entity or an already existing one. Depending on that,
-     *  hibernate performs an insert- or an update-statement.
+     * If the id in an entity is set (either manually or by the sequence generation strategy ), then hibernate has to perform an additional
+     * select-statement when calling merge. Only this way, hibernate can decide if it is a new entity or an already existing one. Depending on that,
+     * hibernate performs an insert- or an update-statement.
      */
     @Test
     public void mergeOneCustomer() {
@@ -89,8 +87,8 @@ public class CustomerRepositoryTest {
         for (int i = 0; i < 1000000; i++) {
             Customer customer = new Customer("Firstname" + i, "Surname" + i);
             this.em.persist(customer);
-            if ( i % 20 == 0 ) { //20, same as the JDBC batch size
-                //flush a batch of inserts and release memory:
+            if (i % 20 == 0) { // 20, same as the JDBC batch size
+                // flush a batch of inserts and release memory:
                 this.em.flush();
                 this.em.clear();
             }
@@ -108,8 +106,8 @@ public class CustomerRepositoryTest {
         String insertCustomerSQL = "INSERT INTO CUSTOMER"
                 + "(ID, FIRST_NAME, SUR_NAME) VALUES"
                 + "(CUSTOMER_SEQ.NEXTVAL,?,?)";
-        try(Connection conn = DriverManager.getConnection(DB_CONNECTION, DB_USER, DB_PASSWORD);
-            PreparedStatement preparedStatement = conn.prepareStatement(insertCustomerSQL)){
+        try (Connection conn = DriverManager.getConnection(DB_CONNECTION, DB_USER, DB_PASSWORD);
+                PreparedStatement preparedStatement = conn.prepareStatement(insertCustomerSQL)) {
             for (int i = 0; i < 1000000; i++) {
                 preparedStatement.setString(1, "Firstname" + i);
                 preparedStatement.setString(2, "Surname" + i);
@@ -133,8 +131,8 @@ public class CustomerRepositoryTest {
             }
             customer.setProducts(products);
             this.em.persist(customer);
-            if ( i % 20 == 0 ) { //20, same as the JDBC batch size
-                //flush a batch of inserts and release memory:
+            if (i % 20 == 0) { // 20, same as the JDBC batch size
+                // flush a batch of inserts and release memory:
                 this.em.flush();
                 this.em.clear();
             }
@@ -142,7 +140,7 @@ public class CustomerRepositoryTest {
 
         List<Customer> customers = this.repository.findAll();
         assertThat(customers).hasSize(1000);
-        for(Customer customer : customers){
+        for (Customer customer : customers) {
             assertThat(customer.getProducts()).hasSize(500);
         }
     }
@@ -158,9 +156,9 @@ public class CustomerRepositoryTest {
         String insertProductSQL = "INSERT INTO PRODUCT"
                 + "(ID, CUSTOMER_ID, NAME) VALUES"
                 + "(PRODUCT_SEQ.NEXTVAL,CUSTOMER_SEQ.CURRVAL,?)";
-        try(Connection conn = DriverManager.getConnection(DB_CONNECTION, DB_USER, DB_PASSWORD);
-            PreparedStatement pstCustomer = conn.prepareStatement(insertCustomerSQL);
-            PreparedStatement pstProduct = conn.prepareStatement(insertProductSQL)){
+        try (Connection conn = DriverManager.getConnection(DB_CONNECTION, DB_USER, DB_PASSWORD);
+                PreparedStatement pstCustomer = conn.prepareStatement(insertCustomerSQL);
+                PreparedStatement pstProduct = conn.prepareStatement(insertProductSQL)) {
             for (int i = 0; i < 1000; i++) {
                 pstCustomer.setString(1, "Firstname" + i);
                 pstCustomer.setString(2, "Surname" + i);
@@ -174,7 +172,7 @@ public class CustomerRepositoryTest {
 
         List<Customer> customers = this.repository.findAll();
         assertThat(customers).hasSize(1000);
-        for(Customer customer : customers){
+        for (Customer customer : customers) {
             assertThat(customer.getProducts()).hasSize(500);
         }
 

@@ -8,13 +8,13 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.orm.jpa.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import ch.rwi.domain.Customer;
 
-import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -25,6 +25,7 @@ import java.util.List;
 
 @RunWith(SpringRunner.class)
 @DataJpaTest
+@AutoConfigureTestDatabase(replace= AutoConfigureTestDatabase.Replace.NONE)
 public class CustomerRepositoryTest {
 
     @Autowired
@@ -81,10 +82,10 @@ public class CustomerRepositoryTest {
      */
     @Test
     public void batchInsertWithHibernate() {
-        for (int i = 0; i < 1000000; i++) {
+        for (int i = 0; i < 100; i++) {
             Customer customer = new Customer("Firstname" + i, "Surname" + i);
             this.em.persist(customer);
-            if (i % 20 == 0) { // 20, same as the JDBC batch size
+            if (i % 50 == 0) { // 50, same as the JDBC batch size
                 // flush a batch of inserts and release memory:
                 this.em.flush();
                 this.em.clear();
@@ -92,7 +93,7 @@ public class CustomerRepositoryTest {
         }
         List<Customer> customers = this.repository.findAll();
 
-        assertThat(customers).hasSize(1000000);
+        assertThat(customers).hasSize(100);
     }
 
     @Test
